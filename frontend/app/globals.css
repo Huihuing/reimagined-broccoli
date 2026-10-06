@@ -1,0 +1,138 @@
+:root {
+  color-scheme: light;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f7f4;
+  color: #17211a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.shell {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 32px 20px;
+}
+
+.card {
+  width: min(100%, 520px);
+  background: #ffffff;
+  border: 1px solid #dfe8e0;
+  border-radius: 20px;
+  padding: 36px;
+  box-shadow: 0 18px 50px rgba(21, 45, 28, 0.08);
+}
+
+.hero {
+  text-align: center;
+}
+
+.eyebrow {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  color: #3e7a4c;
+}
+
+h1 {
+  margin: 0;
+  font-size: clamp(32px, 7vw, 48px);
+  line-height: 1.1;
+}
+
+.description {
+  margin: 18px 0 28px;
+  color: #5e6b61;
+  line-height: 1.7;
+}
+
+.button {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  padding: 0 20px;
+  background: #245f34;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.signup-form {
+  display: grid;
+  gap: 18px;
+}
+
+.signup-form label {
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.signup-form input {
+  width: 100%;
+  border: 1px solid #cad7cc;
+  border-radius: 10px;
+  padding: 13px 14px;
+  outline: none;
+  background: #ffffff;
+}
+
+.signup-form input:focus {
+  border-color: #3e7a4c;
+  box-shadow: 0 0 0 3px rgba(62, 122, 76, 0.12);
+}
+
+.signup-form .button {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 22px;
+  color: #3e7a4c;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.message {
+  margin: 20px 0 0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  background: #eef6ef;
+  color: #245f34;
+  line-height: 1.5;
+}
+
+@media (max-width: 560px) {
+  .card {
+    padding: 28px 22px;
+  }
+}
