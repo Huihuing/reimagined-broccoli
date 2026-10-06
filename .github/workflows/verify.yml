@@ -13,6 +13,7 @@ jobs:
         working-directory: backend
     env:
       DATABASE_URL: sqlite:///./test_members.db
+      PYTHONPATH: .
 
     steps:
       - uses: actions/checkout@v4
