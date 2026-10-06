@@ -115,3 +115,19 @@ GitHub Actions의 `Verify posts CRUD assignment`에서 PostgreSQL 16을 실제�
 - 삭제 확인 GET에서 데이터 보존
 - 삭제 후 상세·수정·삭제 URL 404
 - 요청 로그의 감시 서비스 JSON 수집
+
+
+## Git 커밋 이력
+
+구현과 구조 변경은 Git 커밋으로 관리했습니다. 제출 환경에서 `.git` 디렉터리가 제외되더라도
+커밋 이력을 확인할 수 있도록 루트의 [GIT_HISTORY.md](./GIT_HISTORY.md)와
+[git-log.txt](./git-log.txt)에 실제 commit SHA와 메시지를 함께 기록했습니다.
+
+주요 게시판 작업 커밋:
+
+```text
+76e9c733 feat: implement Flask PostgreSQL posts CRUD
+7f3a3a6e test: cover posts CRUD requirements
+fdccf71e ci: verify Flask PostgreSQL posts CRUD
+6a434bb0 feat: switch main to posts CRUD assignment
+```

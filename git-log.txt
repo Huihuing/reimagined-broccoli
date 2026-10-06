@@ -1,0 +1,12 @@
+Git commit history - reimagined-broccoli / main
+
+76e9c7331d7f6aba77bea1af0c1d165baacc7c99 feat: implement Flask PostgreSQL posts CRUD
+7f3a3a6ec8ceb7b44efaade72e2ce0cc533e1bf4 test: cover posts CRUD requirements
+fdccf71efa0826c3c30484cdf21a0153619dbe4c ci: verify Flask PostgreSQL posts CRUD
+6a434bb07b1116dc3313dc20cbb4ccfb77fbccbf feat: switch main to posts CRUD assignment
+
+Repository: https://github.com/Huihuing/reimagined-broccoli
+Branch: main
+
+Verify with:
+git log --oneline --decorate
