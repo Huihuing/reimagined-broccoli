@@ -77,3 +77,14 @@ npm run dev
 ```
 
 성공하면 사용자 id, username, email, created_at만 반환하며 비밀번호와 password_hash는 응답하지 않습니다.
+
+## 검증
+
+GitHub Actions의 `Verify assignment` 워크플로에서 다음을 자동 검증합니다.
+
+- Python 소스 문법 검사
+- 회원가입 API 성공 여부
+- SQLite DB 실제 저장 여부
+- 비밀번호가 평문이 아닌 bcrypt 해시로 저장되는지 확인
+- 중복 회원가입 차단
+- Next.js 프로덕션 빌드
