@@ -1,90 +1,117 @@
-# reimagined-broccoli
+# Mini Watch Posts CRUD
 
-회원가입 구현 과제용 프로젝트입니다.
+Flask, Jinja2, PostgreSQL을 사용한 게시판 CRUD 실습 과제입니다.
 
 ## 기술 스택
 
-- Frontend: Next.js + TypeScript
-- Backend: Python + FastAPI
-- ORM: SQLAlchemy
-- Database: SQLite
-- Password protection: bcrypt one-way hashing
+- Python
+- Flask
+- Jinja2
+- PostgreSQL
+- psycopg
+- python-dotenv
+- requests
+- HTML / CSS
 
-## 구현된 요구사항
-
-- Python 백엔드
-- SQLAlchemy ORM 기반 `users` 테이블 저장
-- 비밀번호 평문 저장 금지: bcrypt 해시만 `password_hash`에 저장
-- Next.js 회원가입 화면
-- 중복 아이디/이메일 검사
-- frontend/backend 및 model/schema/router/service 모듈 분리
-
-## 디렉토리
+## 프로젝트 구조
 
 ```text
-backend/
-  app/
-    models/
-    routers/
-    schemas/
-    services/
-    database.py
-    main.py
-frontend/
-  app/
-    signup/
+general/
+├─ app.py
+├─ db.py
+├─ post_rules.py
+├─ request_logging.py
+├─ requirements.txt
+├─ .env
+├─ .env.example
+├─ repositories/
+│  ├─ __init__.py
+│  └─ posts.py
+├─ routes/
+│  ├─ __init__.py
+│  └─ posts.py
+├─ templates/
+│  ├─ index.html
+│  ├─ detail.html
+│  ├─ new.html
+│  ├─ edit.html
+│  ├─ delete.html
+│  └─ error.html
+├─ static/
+│  └─ style.css
+├─ sql/
+│  └─ 001_create_posts.sql
+└─ tests/
+   └─ test_posts.py
+
+monitor/
+└─ backend/
+   ├─ app.py
+   └─ requirements.txt
 ```
 
-## 실행 방법
+## 구현 기능
 
-### Backend
+- 게시글 목록: `GET /`
+- 게시글 상세: `GET /board/<post_id>`
+- 게시글 작성: `GET, POST /board/new`
+- 게시글 수정: `GET, POST /board/<post_id>/edit`
+- 게시글 삭제 확인/삭제: `GET, POST /board/<post_id>/delete`
+- 공백 제거 및 빈 제목/본문 검증
+- 입력 오류 `400`
+- 없는 게시글 `404`
+- 작성/수정/삭제 후 `303` 리다이렉트
+- PostgreSQL `posts` 테이블과 시퀀스 사용
+- `INSERT ... RETURNING id`
+- Blueprint / Repository / Validation / Request Logging 역할 분리
+- 일반 서비스 요청 로그를 `requests`로 감시 서비스에 JSON 전송
+
+## 실행
+
+### 1. PostgreSQL 준비
+
+`general/.env`의 DB 접속 정보를 자신의 PostgreSQL 환경에 맞게 수정합니다.
+
+```env
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_NAME=mini_watch
+DB_USER=postgres
+DB_PASSWORD=postgres
+MONITOR_URL=http://127.0.0.1:5200/api/events
+```
+
+`general/sql/001_create_posts.sql`을 실행하여 `posts` 테이블과 시퀀스를 준비합니다.
+
+### 2. 감시 서비스
 
 ```bash
-cd backend
+cd monitor/backend
 python -m venv .venv
-# Windows
-.venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+python app.py
 ```
 
-백엔드는 기본적으로 `http://localhost:8000`에서 실행됩니다.
-
-### Frontend
+### 3. 게시판 서비스
 
 ```bash
-cd frontend
-npm install
-npm run dev
+cd general
+python -m venv .venv
+pip install -r requirements.txt
+python app.py
 ```
 
-프론트엔드는 기본적으로 `http://localhost:3000`에서 실행됩니다.
+게시판은 기본적으로 `http://127.0.0.1:5100`, 감시 서비스는 `http://127.0.0.1:5200`에서 실행됩니다.
 
-다른 백엔드 주소를 사용하려면 frontend의 환경변수 `NEXT_PUBLIC_API_URL`을 설정합니다.
+## 자동 검증
 
-## 회원가입 API
+GitHub Actions의 `Verify posts CRUD assignment`에서 PostgreSQL 16을 실제로 실행하여 다음을 확인합니다.
 
-`POST /api/auth/signup`
-
-요청 예시:
-
-```json
-{
-  "username": "broccoli_user",
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-
-성공하면 사용자 id, username, email, created_at만 반환하며 비밀번호와 password_hash는 응답하지 않습니다.
-
-## 검증
-
-GitHub Actions의 `Verify assignment` 워크플로에서 다음을 자동 검증합니다.
-
-- Python 소스 문법 검사
-- 회원가입 API 성공 여부
-- SQLite DB 실제 저장 여부
-- 비밀번호가 평문이 아닌 bcrypt 해시로 저장되는지 확인
-- 중복 회원가입 차단
-- Next.js 프로덕션 빌드
+- Python 문법
+- posts 테이블 및 시퀀스 준비
+- 목록 / 상세 / 작성 / 수정 / 삭제
+- 400 / 404 / 303 응답
+- 잘못된 입력 시 DB 유지
+- 삭제 확인 GET에서 데이터 보존
+- 삭제 후 상세·수정·삭제 URL 404
+- 요청 로그의 감시 서비스 JSON 수집

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mini Watch 게시판</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">MINI WATCH BOARD</p>
+        <h1>게시글 목록</h1>
+      </div>
+      <a class="button primary" href="{{ url_for('posts.new_post') }}">새 글 작성</a>
+    </header>
+
+    {% if posts %}
+      <section class="post-list" aria-label="게시글 목록">
+        {% for post in posts %}
+          <article class="post-row">
+            <span class="post-id">#{{ post.id }}</span>
+            <h2>
+              <a href="{{ url_for('posts.detail', post_id=post.id) }}">{{ post.title }}</a>
+            </h2>
+          </article>
+        {% endfor %}
+      </section>
+    {% else %}
+      <p class="empty-state">등록된 게시글이 없습니다.</p>
+    {% endif %}
+  </main>
+</body>
+</html>
