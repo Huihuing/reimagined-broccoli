@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>오류 - Mini Watch 게시판</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container narrow">
+    <section class="error-card">
+      <p class="eyebrow">ERROR</p>
+      <h1>요청을 처리할 수 없습니다.</h1>
+      <p>{{ message }}</p>
+      <a class="button primary" href="{{ url_for('posts.index') }}">목록으로</a>
+    </section>
+  </main>
+</body>
+</html>
