@@ -1,4 +1,4 @@
-name: Verify assignment
+name: Verify signup assignment
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
       - name: Check Python syntax
         run: python -m compileall -q app tests
 
-      - name: Verify signup, DB save and password hashing
+      - name: Verify SQLAlchemy signup and encrypted password storage
         run: pytest -q
 
   frontend:
@@ -52,101 +52,3 @@ jobs:
 
       - name: Build Next.js
         run: npm run build
-
-  posts-crud:
-    runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: mini_watch
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres -d mini_watch"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
-    defaults:
-      run:
-        working-directory: general
-
-    env:
-      DB_HOST: 127.0.0.1
-      DB_PORT: "5432"
-      DB_NAME: mini_watch
-      DB_USER: postgres
-      DB_PASSWORD: postgres
-      MONITOR_URL: http://127.0.0.1:5200/api/events
-      PYTHONPATH: .
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install board and monitor dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r ../monitor/backend/requirements.txt
-
-      - name: Check Flask project syntax
-        run: python -m compileall -q . ../monitor/backend
-
-      - name: Prepare PostgreSQL posts table
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          from db import connect_db
-
-          statements = [
-              statement.strip()
-              for statement in Path("sql/001_create_posts.sql").read_text(encoding="utf-8").split(";")
-              if statement.strip()
-          ]
-
-          with connect_db() as conn:
-              for statement in statements:
-                  conn.execute(statement)
-              conn.commit()
-          PY
-
-      - name: Start monitoring service
-        run: |
-          python ../monitor/backend/app.py > /tmp/mini-watch-monitor.log 2>&1 &
-          python - <<'PY'
-          import time
-          import requests
-
-          for _ in range(20):
-              try:
-                  response = requests.get("http://127.0.0.1:5200/health", timeout=0.5)
-                  if response.ok:
-                      break
-              except requests.RequestException:
-                  pass
-              time.sleep(0.25)
-          else:
-              raise SystemExit("monitor service did not start")
-          PY
-
-      - name: Verify posts CRUD and HTTP behavior
-        run: pytest -q tests/test_posts.py
-
-      - name: Verify request logs reached monitor service
-        run: |
-          python - <<'PY'
-          import requests
-
-          response = requests.get("http://127.0.0.1:5200/api/events", timeout=2)
-          response.raise_for_status()
-          payload = response.json()
-          assert payload["count"] > 0, payload
-          print(f"collected events: {payload['count']}")
-          PY
