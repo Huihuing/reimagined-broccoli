@@ -11,10 +11,11 @@ export default function SignupPage() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
     setMessage("");
     setSubmitting(true);
 
-    const form = new FormData(event.currentTarget);
+    const form = new FormData(formElement);
     const password = String(form.get("password") ?? "");
     const passwordConfirm = String(form.get("passwordConfirm") ?? "");
 
@@ -46,7 +47,7 @@ export default function SignupPage() {
         return;
       }
 
-      event.currentTarget.reset();
+      formElement.reset();
       setMessage(`${data.username}님, 회원가입이 완료되었습니다.`);
     } catch {
       setMessage("서버에 연결할 수 없습니다.");
@@ -114,7 +115,11 @@ export default function SignupPage() {
           </button>
         </form>
 
-        {message && <p className="message" role="status">{message}</p>}
+        {message && (
+          <p className="message" role="status">
+            {message}
+          </p>
+        )}
       </section>
     </main>
   );
