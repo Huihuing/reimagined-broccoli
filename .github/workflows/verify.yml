@@ -1,12 +1,15 @@
-name: Verify posts CRUD assignment
+name: Verify monitoring dashboard assignment
 
 on:
   push:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: write
+
 jobs:
-  posts-crud:
+  integration:
     runs-on: ubuntu-latest
 
     services:
@@ -24,10 +27,6 @@ jobs:
           --health-timeout 5s
           --health-retries 10
 
-    defaults:
-      run:
-        working-directory: general
-
     env:
       DB_HOST: 127.0.0.1
       DB_PORT: "5432"
@@ -35,7 +34,7 @@ jobs:
       DB_USER: postgres
       DB_PASSWORD: postgres
       MONITOR_URL: http://127.0.0.1:5200/api/events
-      PYTHONPATH: .
+      SESSION_SECRET: ci-test-secret
 
     steps:
       - uses: actions/checkout@v4
@@ -44,63 +43,163 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install -r ../monitor/backend/requirements.txt
+          pip install -r general/requirements.txt
+          pip install -r monitor/backend/requirements.txt
 
       - name: Check Python syntax
-        run: python -m compileall -q . ../monitor/backend
+        run: |
+          python -m compileall -q general monitor/backend
 
-      - name: Prepare PostgreSQL posts table
+      - name: Prepare PostgreSQL schema
+        working-directory: general
         run: |
           python - <<'PY'
           from pathlib import Path
           from db import connect_db
 
-          statements = [
-              statement.strip()
-              for statement in Path("sql/001_create_posts.sql").read_text(encoding="utf-8").split(";")
-              if statement.strip()
+          sql_files = [
+              Path("sql/001_create_posts.sql"),
+              Path("../monitor/backend/sql/001_monitor.sql"),
           ]
 
           with connect_db() as conn:
-              for statement in statements:
-                  conn.execute(statement)
+              for sql_file in sql_files:
+                  statements = [
+                      statement.strip()
+                      for statement in sql_file.read_text(encoding="utf-8").split(";")
+                      if statement.strip()
+                  ]
+                  for statement in statements:
+                      conn.execute(statement)
               conn.commit()
           PY
 
-      - name: Start monitoring service
+      - name: Verify monitoring backend API
+        working-directory: monitor/backend
+        env:
+          PYTHONPATH: .
+        run: pytest -q tests/test_api.py
+
+      - name: Prepare integration operator account
+        working-directory: monitor/backend
+        env:
+          PYTHONPATH: .
         run: |
-          python ../monitor/backend/app.py > /tmp/mini-watch-monitor.log 2>&1 &
+          python create_user.py --username admin --name "운영자" --password test-password
+
+      - name: Start monitoring API
+        working-directory: monitor/backend
+        env:
+          PYTHONPATH: .
+        run: |
+          python app.py > /tmp/mini-watch-monitor.log 2>&1 &
           python - <<'PY'
           import time
-          import requests
+          import urllib.request
 
-          for _ in range(20):
+          for _ in range(30):
               try:
-                  response = requests.get("http://127.0.0.1:5200/health", timeout=0.5)
-                  if response.ok:
-                      break
-              except requests.RequestException:
+                  with urllib.request.urlopen("http://127.0.0.1:5200/health", timeout=0.5) as response:
+                      if response.status == 200:
+                          break
+              except Exception:
                   pass
               time.sleep(0.25)
           else:
-              raise SystemExit("monitor service did not start")
+              raise SystemExit("monitor API did not start")
           PY
 
-      - name: Verify CRUD and HTTP behavior
+      - name: Verify existing general board CRUD and event sending
+        working-directory: general
+        env:
+          PYTHONPATH: .
         run: pytest -q tests/test_posts.py
 
-      - name: Verify monitoring collection
+      - name: Verify collected events through authenticated API
         run: |
           python - <<'PY'
           import requests
 
-          response = requests.get("http://127.0.0.1:5200/api/events", timeout=2)
-          response.raise_for_status()
-          payload = response.json()
-          assert payload["count"] > 0, payload
-          print(f"collected events: {payload['count']}")
+          session = requests.Session()
+
+          blank = session.post(
+              "http://127.0.0.1:5200/api/auth/login",
+              json={"username": "", "password": ""},
+              timeout=2,
+          )
+          assert blank.status_code == 400
+
+          wrong = session.post(
+              "http://127.0.0.1:5200/api/auth/login",
+              json={"username": "admin", "password": "wrong"},
+              timeout=2,
+          )
+          assert wrong.status_code == 401
+
+          login = session.post(
+              "http://127.0.0.1:5200/api/auth/login",
+              json={"username": "admin", "password": "test-password"},
+              timeout=2,
+          )
+          login.raise_for_status()
+
+          events = session.get(
+              "http://127.0.0.1:5200/api/events",
+              timeout=2,
+          )
+          events.raise_for_status()
+          payload = events.json()
+          assert payload["summary"]["total"] > 0, payload
+          assert any(item["path"].startswith("/board") or item["path"] == "/" for item in payload["events"])
+
+          filtered = session.get(
+              "http://127.0.0.1:5200/api/events",
+              params={"status": 404},
+              timeout=2,
+          )
+          filtered.raise_for_status()
+
+          logout = session.post(
+              "http://127.0.0.1:5200/api/auth/logout",
+              timeout=2,
+          )
+          logout.raise_for_status()
+
+          protected = session.get(
+              "http://127.0.0.1:5200/api/events",
+              timeout=2,
+          )
+          assert protected.status_code == 401
           PY
+
+  frontend:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Vite React dependencies
+        working-directory: monitor/frontend
+        run: npm install
+
+      - name: Build React dashboard
+        working-directory: monitor/frontend
+        run: npm run build
+
+      - name: Commit generated package lock when missing
+        if: github.event_name == 'push'
+        run: |
+          if [ -n "$(git status --porcelain monitor/frontend/package-lock.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add monitor/frontend/package-lock.json
+            git commit -m "chore: add monitor frontend package lock"
+            git push
+          fi
