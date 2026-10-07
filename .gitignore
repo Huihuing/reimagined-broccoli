@@ -4,5 +4,13 @@ __pycache__/
 .venv/
 venv/
 
-# Local environment overrides
+# Environment / secrets
+.env
 .env.local
+
+# Node / Vite
+node_modules/
+dist/
+
+# Test / cache
+.pytest_cache/

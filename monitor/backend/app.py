@@ -1,25 +1,30 @@
-from flask import Flask, jsonify, request
+import os
+
+from flask import Flask, jsonify
+
+from routes import auth_bp, events_bp, notes_bp
 
 
-app = Flask(__name__)
-events: list[dict] = []
+def create_app() -> Flask:
+    app = Flask(__name__)
+    app.config.update(
+        SECRET_KEY=os.getenv("SESSION_SECRET", "dev-only-change-me"),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+    )
+
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(events_bp)
+    app.register_blueprint(notes_bp)
+
+    @app.get("/health")
+    def health():
+        return jsonify({"status": "ok"})
+
+    return app
 
 
-@app.route("/api/events", methods=["GET", "POST"])
-def api_events():
-    if request.method == "POST":
-        event = request.get_json(silent=True)
-        if not isinstance(event, dict):
-            return jsonify({"error": "JSON 객체가 필요합니다."}), 400
-        events.append(event)
-        return jsonify({"saved": True}), 201
-
-    return jsonify({"events": events, "count": len(events)})
-
-
-@app.get("/health")
-def health():
-    return jsonify({"status": "ok"})
+app = create_app()
 
 
 if __name__ == "__main__":
