@@ -7,14 +7,20 @@ export class ApiError extends Error {
 }
 
 export async function apiRequest(path, options = {}) {
-  const response = await fetch(`/api${path}`, {
-    credentials: "include",
-    ...options,
-    headers: {
-      ...(options.body ? { "Content-Type": "application/json" } : {}),
-      ...(options.headers ?? {}),
-    },
-  });
+  let response;
+
+  try {
+    response = await fetch(`/api${path}`, {
+      credentials: "include",
+      ...options,
+      headers: {
+        ...(options.body ? { "Content-Type": "application/json" } : {}),
+        ...(options.headers ?? {}),
+      },
+    });
+  } catch {
+    throw new ApiError("감시 API에 연결할 수 없습니다.", 0);
+  }
 
   const payload = await response
     .json()

@@ -38,8 +38,10 @@ export default function Dashboard({ user, onLogout }) {
         path: payload.filters.path ?? "",
         status: payload.filters.status ?? "",
       });
+      return true;
     } catch (error) {
       setEventError(error.message);
+      return false;
     } finally {
       setEventsLoading(false);
     }
@@ -57,8 +59,10 @@ export default function Dashboard({ user, onLogout }) {
         setSelectedNote(null);
         setMode("detail");
       }
+      return true;
     } catch (error) {
       setNoteError(error.message);
+      return false;
     }
   }
 
@@ -120,8 +124,13 @@ export default function Dashboard({ user, onLogout }) {
 
   async function refreshAll() {
     setMessage("");
-    await Promise.all([loadEvents(filters), loadNotes()]);
-    setMessage("요청 기록과 메모를 다시 조회했습니다.");
+    const [eventsOk, notesOk] = await Promise.all([
+      loadEvents(filters),
+      loadNotes(),
+    ]);
+    if (eventsOk && notesOk) {
+      setMessage("요청 기록과 메모를 다시 조회했습니다.");
+    }
   }
 
   function renderNoteWorkspace() {
@@ -205,6 +214,10 @@ export default function Dashboard({ user, onLogout }) {
         loading={eventsLoading}
         error={eventError}
       />
+
+      {noteError && mode === "detail" && (
+        <p className="error-banner" role="alert">{noteError}</p>
+      )}
 
       <div className="notes-grid">
         <NoteList

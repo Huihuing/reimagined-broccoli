@@ -1,3 +1,5 @@
+import { useEffect, useState } from "react";
+
 export default function EventList({
   events,
   summary,
@@ -7,13 +9,31 @@ export default function EventList({
   loading,
   error,
 }) {
+  const [path, setPath] = useState(filters.path ?? "");
+  const [status, setStatus] = useState(
+    filters.status === null || filters.status === undefined
+      ? ""
+      : String(filters.status),
+  );
+
+  useEffect(() => {
+    setPath(filters.path ?? "");
+    setStatus(
+      filters.status === null || filters.status === undefined
+        ? ""
+        : String(filters.status),
+    );
+  }, [filters.path, filters.status]);
+
   function handleSubmit(event) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    onFilterChange({
-      path: String(form.get("path") ?? ""),
-      status: String(form.get("status") ?? ""),
-    });
+    onFilterChange({ path, status });
+  }
+
+  function clearFilters() {
+    setPath("");
+    setStatus("");
+    onFilterChange({ path: "", status: "" });
   }
 
   return (
@@ -42,12 +62,14 @@ export default function EventList({
       <form className="filter-form" onSubmit={handleSubmit}>
         <input
           name="path"
-          defaultValue={filters.path}
+          value={path}
+          onChange={(event) => setPath(event.target.value)}
           placeholder="경로 검색 예: /board"
         />
         <input
           name="status"
-          defaultValue={filters.status}
+          value={status}
+          onChange={(event) => setStatus(event.target.value)}
           inputMode="numeric"
           placeholder="상태 코드 예: 404"
         />
@@ -55,13 +77,13 @@ export default function EventList({
         <button
           className="button"
           type="button"
-          onClick={() => onFilterChange({ path: "", status: "" })}
+          onClick={clearFilters}
         >
           조건 해제
         </button>
       </form>
 
-      {error && <p className="error-banner">{error}</p>}
+      {error && <p className="error-banner" role="alert">{error}</p>}
       {loading ? (
         <p className="empty-state">요청 기록을 불러오는 중입니다.</p>
       ) : events.length === 0 ? (

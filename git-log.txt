@@ -4,6 +4,10 @@ Git commit history - reimagined-broccoli / main
 7f3a3a6ec8ceb7b44efaade72e2ce0cc533e1bf4 test: cover posts CRUD requirements
 fdccf71efa0826c3c30484cdf21a0153619dbe4c ci: verify Flask PostgreSQL posts CRUD
 6a434bb07b1116dc3313dc20cbb4ccfb77fbccbf feat: switch main to posts CRUD assignment
+0c705557083719672bb8ef7e4a73de3bb2112305 docs: add Git commit history evidence
+9e040e9451f5917dfb8444b7d946a4b39369e83a feat: build React Flask monitoring dashboard
+d38d9b2c763cb9ecc435eb045ae4786167ca110e ci: verify React Flask monitoring dashboard
+047ed052ae28d4de52bc84c060c9e66543729ec0 chore: add monitor frontend package lock
 
 Repository: https://github.com/Huihuing/reimagined-broccoli
 Branch: main

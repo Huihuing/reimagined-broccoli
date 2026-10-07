@@ -6,7 +6,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   integration:
@@ -50,8 +50,7 @@ jobs:
           pip install -r monitor/backend/requirements.txt
 
       - name: Check Python syntax
-        run: |
-          python -m compileall -q general monitor/backend
+        run: python -m compileall -q general monitor/backend
 
       - name: Prepare PostgreSQL schema
         working-directory: general
@@ -184,22 +183,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: monitor/frontend/package-lock.json
 
       - name: Install Vite React dependencies
         working-directory: monitor/frontend
-        run: npm install
+        run: npm ci
 
       - name: Build React dashboard
         working-directory: monitor/frontend
         run: npm run build
-
-      - name: Commit generated package lock when missing
-        if: github.event_name == 'push'
-        run: |
-          if [ -n "$(git status --porcelain monitor/frontend/package-lock.json)" ]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add monitor/frontend/package-lock.json
-            git commit -m "chore: add monitor frontend package lock"
-            git push
-          fi

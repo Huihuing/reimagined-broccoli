@@ -1,47 +1,53 @@
 # Git Commit History Evidence
 
-이 프로젝트는 Git/GitHub으로 구현 및 구조 변경 이력을 관리했습니다.
+이 프로젝트는 Git/GitHub으로 구현과 구조 변경 이력을 관리합니다.
 
 Repository: https://github.com/Huihuing/reimagined-broccoli  
 Branch: `main`
 
-제출 시스템이 소스 파일만 전달하고 `.git` 디렉터리를 포함하지 않는 경우에도
-실제 Git 커밋 이력과 커밋 메시지를 확인할 수 있도록 아래에 기록합니다.
+제출 시스템이 소스 파일만 전달하고 `.git` 디렉터리를 제외하는 경우에도 실제 커밋 이력과 메시지를 확인할 수 있도록 주요 이력을 기록합니다.
 
-## 게시판 CRUD 구현 관련 실제 커밋
+## 기존 게시판 단계
 
 ```text
 76e9c7331d7f6aba77bea1af0c1d165baacc7c99 feat: implement Flask PostgreSQL posts CRUD
 7f3a3a6ec8ceb7b44efaade72e2ce0cc533e1bf4 test: cover posts CRUD requirements
 fdccf71efa0826c3c30484cdf21a0153619dbe4c ci: verify Flask PostgreSQL posts CRUD
 6a434bb07b1116dc3313dc20cbb4ccfb77fbccbf feat: switch main to posts CRUD assignment
+0c705557083719672bb8ef7e4a73de3bb2112305 docs: add Git commit history evidence
 ```
 
-각 커밋의 역할은 다음과 같습니다.
+## React + Flask 감시 대시보드 단계
 
-- `feat: implement Flask PostgreSQL posts CRUD`
-  - Flask/Jinja2/PostgreSQL 게시판 CRUD 구현
-  - `general/app.py`, `db.py`, `post_rules.py`
-  - `repositories/posts.py`, `routes/posts.py`
-  - templates, static CSS, SQL, request logging, monitor 서비스 추가
-- `test: cover posts CRUD requirements`
-  - 목록/상세/작성/수정/삭제 테스트 추가
-  - 400/404/303 응답과 잘못된 입력 시 DB 보존 검증
-- `ci: verify Flask PostgreSQL posts CRUD`
-  - PostgreSQL을 실제 실행하는 GitHub Actions 검증 추가
-  - 감시 서비스 요청 로그 수집 검증 추가
-- `feat: switch main to posts CRUD assignment`
-  - 게시판 과제 제출용으로 프로젝트 구조를 정리
-  - `general/`과 `monitor/backend/` 중심 구조로 분리
+```text
+9e040e9451f5917dfb8444b7d946a4b39369e83a feat: build React Flask monitoring dashboard
+d38d9b2c763cb9ecc435eb045ae4786167ca110e ci: verify React Flask monitoring dashboard
+047ed052ae28d4de52bc84c060c9e66543729ec0 chore: add monitor frontend package lock
+```
 
-GitHub 저장소의 commit history에서도 동일한 SHA와 메시지를 확인할 수 있습니다.
+### 커밋별 작업
 
-## 확인 명령
+- `feat: build React Flask monitoring dashboard`
+  - `monitor/backend`를 PostgreSQL 기반 Flask API로 확장
+  - 운영자 로그인 및 비밀번호 해시 검증
+  - request event 영구 저장
+  - 관찰 메모 CRUD와 상태 저장
+  - Flask session과 API 보호
+  - `monitor/frontend` Vite + React 화면 및 역할별 컴포넌트/API 모듈 추가
+  - 실제 `.env` 제거 및 `.env.example` 구성
+- `ci: verify React Flask monitoring dashboard`
+  - PostgreSQL 16을 실제 실행하는 통합 검증 구성
+  - 기존 general 게시판과 monitor 수집 연동 확인
+  - 로그인/세션/이벤트/메모 API와 React production build 검증
+- `chore: add monitor frontend package lock`
+  - 실제 npm 설치 결과로 생성된 `monitor/frontend/package-lock.json` 추가
 
-Git 저장소를 clone한 경우 다음 명령으로 같은 이력을 확인할 수 있습니다.
+## 확인 방법
+
+Git 저장소를 clone한 경우:
 
 ```bash
 git log --oneline --decorate
 ```
 
-이 문서 자체도 Git으로 커밋되어 관리됩니다.
+GitHub 저장소의 Commit history에서도 같은 SHA와 메시지를 확인할 수 있습니다.
