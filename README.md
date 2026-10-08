@@ -340,3 +340,18 @@ GitHub Actions의 `Verify monitoring dashboard assignment`에서 다음을 실�
 ## Git 이력
 
 구현과 구조 변경은 Git 커밋으로 관리합니다. 제출 시스템에서 `.git`이 제외돼도 확인할 수 있도록 `GIT_HISTORY.md`와 `git-log.txt`에 실제 SHA와 커밋 메시지를 함께 기록합니다.
+
+
+---
+
+## 새 과제 — Next.js 메모 앱과 GitHub Flow 협업 (2026-10-08)
+
+기존 Flask/React 감시 대시보드는 그대로 유지하면서, **독립적인 Next.js JavaScript App Router 메모 앱**을 `next-practice/`에 추가했습니다.
+
+- [Next.js 메모 앱 실행·구조·동작 설명](next-practice/README.md)
+- [Git 민수·지윤 역할 실습, PR 3개, 작업 기록](GIT_WORK.md)
+- [동작 점검표](checklist.md)
+- `cd next-practice && npm ci && npm run dev`: 개발 서버 실행 (http://localhost:3000)
+- `cd next-practice && npm run build && npm run start`: 프로덕션 실행
+
+Next 메모는 **React state만** 사용하므로 새로고침하면 초기화됩니다. 기존 `monitor/frontend/`의 Flask/PostgreSQL 영구 저장 메모와는 다른, 수업 필수용 독립 앱입니다. GitHub Actions `Verify Next.js notes`에서 설치·빌드·프로덕션 홈/메모 HTTP 응답을 검증합니다.
