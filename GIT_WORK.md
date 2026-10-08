@@ -154,3 +154,14 @@ jiyun PASS: two role files + checklist exist after pull
 ```
 
 **증빙의 범위:** 위 clone/merge/pull은 원본 GitHub Actions 로그에 실제 존재합니다. 사용자 개인 Windows PC에서 수행한 명령 출력은 여전히 별도로 필요합니다. 이 문서의 'PC 작업 미수집' 표시는 **사용자 PC만** 가리킵니다.
+
+## 7. Next.js 앱 변경의 GitHub Flow — 선택 심화 #2
+
+- 최신 `main`에서 새 작업 브랜치 `feature/next-notes-app` 생성
+- 실제 변경 파일: `next-practice/app/`, `next-practice/components/`, `next-practice/package.json`, `next-practice/package-lock.json`, Playwright 테스트, README, CI 워크플로, 제출 기록
+- PR: [#4 — Next.js 메모 앱](https://github.com/Huihuing/reimagined-broccoli/pull/4), `base=main`, `head=feature/next-notes-app`
+- 작업·검토: `Files changed` 확인, [Next.js 테스트 자동 검증](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37735060792)
+- 자동 검증의 실제 출력: `npm ci`, `npm run build`, `npm run start`의 `/`·`/notes` HTTP 확인 성공; **Playwright 3 passed (2.5s)**, lockfile 동기화 커밋 `722ffd916d549232821df2f0f1bcc978cd60fa5e`
+- 병합 여부: PR 원본 `Merged` 상태에서 최종 확인. 각 사용자 PC에서 `git pull`한 출력은 아직 별도 수집 필요.
+
+Next.js 기능을 Git 브랜치→커밋→PR→자동 테스트→검토→병합으로 연결한 기록입니다.
