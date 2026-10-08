@@ -74,3 +74,17 @@ Next.js 공식 create-next-app의 **JavaScript + App Router** 파일 구성을 �
 `.env`, 비밀번호, 토큰, `node_modules/`, `.next/`는 커밋·ZIP에 넣지 않습니다. `package.json`, npm으로 생성한 `package-lock.json`, 소스와 이 README가 제출 대상입니다.
 
 Git 협업 증빙 및 PR 주소는 저장소 루트의 `GIT_WORK.md`에 기록합니다. 추가 심화로 기존 Flask API를 연동하려면 `monitor/backend`와 충돌하지 않도록 `monitor/next-frontend/`에 별도로 구현합니다.
+
+## 자동화 실행 결과 (2026-10-08)
+
+[GitHub Actions #37735060792](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37735060792) — **성공**.
+
+```text
+npm ci: PASS
+npm run build: PASS
+npm run start + GET /: PASS
+npm run start + GET /notes: PASS
+Playwright (Chromium): 3 passed (2.5s)
+```
+
+브라우저 테스트는 `npm run test:e2e`로 실행합니다. 최초 실행 시 `npx playwright install chromium`으로 Chromium 브라우저가 필요합니다. `tests/notes.spec.cjs`에는 카운터, 링크, 중복 메모와 ID 구분, 수정·취소, 공백 검증, 삭제 확인, 수정 중 삭제, 빈 목록, 새로고침 상태 복원이 포함되어 있습니다. 이 자동화 결과는 강의실 PC에서의 수동 동작 확인과 구분됩니다.
