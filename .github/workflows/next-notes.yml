@@ -1,0 +1,69 @@
+name: Verify Next.js notes
+on:
+  push:
+    branches: [main, feature/next-notes-app]
+    paths:
+      - 'next-practice/**'
+      - '.github/workflows/next-notes.yml'
+  pull_request:
+    paths:
+      - 'next-practice/**'
+      - '.github/workflows/next-notes.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate synchronized lockfile
+        working-directory: next-practice
+        run: npm install --package-lock-only --no-audit --no-fund
+      - name: Install exact npm dependencies
+        working-directory: next-practice
+        run: npm ci --no-audit --no-fund
+      - name: Build production Next.js app
+        working-directory: next-practice
+        run: npm run build
+      - name: Run production server and check both routes
+        working-directory: next-practice
+        run: |
+          npm run start > /tmp/next-start.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
+          for i in $(seq 1 35); do
+            if curl -fsS http://127.0.0.1:3000/ > /tmp/home.html; then break; fi
+            sleep 2
+          done
+          curl -fsS http://127.0.0.1:3000/ > /tmp/home.html
+          curl -fsS http://127.0.0.1:3000/notes > /tmp/notes.html
+          grep -q '숫자 카운터' /tmp/home.html
+          grep -q '나의 메모' /tmp/notes.html
+          grep -q '오늘 배운 Next.js' /tmp/notes.html
+          echo 'PASS: production GET / and GET /notes'
+      - name: Install Chromium for UI tests
+        working-directory: next-practice
+        run: npx playwright install --with-deps chromium
+      - name: Test browser interactions
+        working-directory: next-practice
+        run: npm run test:e2e
+      - name: Commit synchronized npm lockfile to app branch
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/next-notes-app'
+        run: |
+          if [ -n "$(git status --porcelain -- next-practice/package-lock.json)" ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add next-practice/package-lock.json
+            git commit -m 'chore(next): synchronize npm dependency lockfile'
+            git pull --rebase origin feature/next-notes-app
+            git push origin HEAD:feature/next-notes-app
+          else
+            echo 'package-lock.json already tracked'
+          fi

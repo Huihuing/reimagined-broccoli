@@ -14,3 +14,9 @@ dist/
 
 # Test / cache
 .pytest_cache/
+
+# Next.js
+.next/
+out/
+*.tsbuildinfo
+npm-debug.log*
