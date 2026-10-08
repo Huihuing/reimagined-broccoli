@@ -165,3 +165,34 @@ jiyun PASS: two role files + checklist exist after pull
 - 병합 여부: PR 원본 `Merged` 상태에서 최종 확인. 각 사용자 PC에서 `git pull`한 출력은 아직 별도 수집 필요.
 
 Next.js 기능을 Git 브랜치→커밋→PR→자동 테스트→검토→병합으로 연결한 기록입니다.
+
+## 8. 선택 심화 1 — **실제 같은 줄 충돌 발생 및 해결**
+
+- 파일: `checklist.md`, **1행 제목**
+- 최초 공통 기반: main `db52f2d22f62992605c3364a3abfdf9a00c96ee0`
+- 민수 브랜치: `feature/conflict-minsu` → `# 민수·지윤 Git 협업 점검표 — 민수 확정안`, [PR #5](https://github.com/Huihuing/reimagined-broccoli/pull/5), 먼저 **Create a merge commit** 병합 (`a511e1f6dae28bd82f0e3ae7788cba279357a0be`)
+- 지윤 브랜치: `feature/conflict-jiyun` → `# 민수·지윤 Git 협업 점검표 — 지윤 정리안`, [PR #6](https://github.com/Huihuing/reimagined-broccoli/pull/6)
+- 지윤 브랜치에서 **최신 origin/main 병합** 실행: [실제 Git 충돌 로그](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37736727608) — GitHub Actions 임시 clone에서 실행함
+- 충돌 기록: `CONFLICT (content): Merge conflict in checklist.md`, `Automatic merge failed`, `MERGE_EXIT=1`, `git ls-files -u checklist.md`로 base/ours/theirs 3단계 인덱스 검증
+- 해결 제목: **`# 민수·지윤 Git 협업 점검표 — 민수 검토 + 지윤 정리 통합안`**
+- 선택 이유: 민수의 검토와 지윤의 정리 의도를 모두 명시하여 한쪽 역할의 변경을 지우지 않고 통합하려고 함
+- 해결 방식: 충돌 마커 제거 → `git add checklist.md` → 동일 지윤 작업 브랜치에서 **2-parent merge commit** `f4891e014440c9b489fe7fe7ff9d2fe6ba860876` → `git push origin HEAD:feature/conflict-jiyun`. 새 PR이 아니라 기존 PR #6에 자동 반영됨.
+- 이후 PR #6을 merge commit으로 main에 반영하고 두 폴더에서 pull하도록 자동 확인 워크플로 `check-conflict-pulls.yml` 추가.
+
+실제 CI 충돌 로그 발췌:
+
+```text
+Auto-merging checklist.md
+CONFLICT (content): Merge conflict in checklist.md
+Automatic merge failed; fix conflicts and then commit the result.
+MERGE_EXIT=1
+100644 4bb1aee73f09859aeff1497b1fd838f49e1e7c38 1 checklist.md
+100644 fd4bba131de2988f0f111a723f65741ef2eddc96 2 checklist.md
+100644 b9dc5670c13c72f95d3530baf0cd60bf8cc5dc29 3 checklist.md
+[feature/conflict-jiyun f4891e0] fix(git): resolve same-line conflict on existing jiyun PR
+commit=f4891e014440c9b489fe7fe7ff9d2fe6ba860876
+parents=f566100732ec42cedef69679bcf5617197b3a48d a511e1f6dae28bd82f0e3ae7788cba279357a0be
+PASS: actual checklist.md conflict resolved and pushed to same PR #6
+```
+
+**PC 상태에 대한 구분:** 이 실습은 GitHub Actions의 실제 임시 작업 폴더에서 수행했다. Windows PC 자체의 pull 기록이라고 주장하지 않는다.
