@@ -355,3 +355,16 @@ GitHub Actions의 `Verify monitoring dashboard assignment`에서 다음을 실�
 - `cd next-practice && npm run build && npm run start`: 프로덕션 실행
 
 Next 메모는 **React state만** 사용하므로 새로고침하면 초기화됩니다. 기존 `monitor/frontend/`의 Flask/PostgreSQL 영구 저장 메모와는 다른, 수업 필수용 독립 앱입니다. GitHub Actions `Verify Next.js notes`에서 설치·빌드·프로덕션 홈/메모 HTTP 응답을 검증합니다.
+
+
+## 2026-10-08 선택 심화 1·3·4 추가 완료
+
+기존 소스는 그대로 유지하면서 이번 Next.js와 Git 브랜치 과제의 누락됐던 선택 항목을 추가 구현했습니다.
+
+- **선택 1 — 같은 줄 Git 충돌:** [PR #5](https://github.com/Huihuing/reimagined-broccoli/pull/5) / [PR #6](https://github.com/Huihuing/reimagined-broccoli/pull/6), 실제 `git merge origin/main`에서 `checklist.md` 충돌 발생 → 동일 PR #6에서 해결 → merge commit 병합 → 두 독립 clone의 `git pull` 자동 검증 PASS.
+- **선택 3 — Flask API와 Next 연결:** 기존 운영자 세션 인증, `GET /api/notes`, `GET /api/notes/:id`, `POST /api/notes`, PostgreSQL 영구 저장, 새로고침 후 유지.
+- **선택 4 — 수정·삭제 연결:** `PUT /api/notes/:id`, `DELETE /api/notes/:id`, 취소 시 요청 안 함, 400/404 오류·원본 보존·새로고침 후 DB 결과 확인.
+
+**심화 Next.js 화면:** [monitor/next-frontend/README.md](monitor/next-frontend/README.md) / 앱 실행 포트 `3001`. **필수 state 메모 앱:** [next-practice/README.md](next-practice/README.md) / `3000`. 두 앱은 별도 결과물이므로 새로고침 동작이 다릅니다.
+
+**PR·검증 원본 로그 및 명령:** [GIT_WORK.md](GIT_WORK.md) (섹션 8~10). Flask/PostgreSQL 통합 검증: [GitHub Actions #37737427371](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37737427371), Chromium 2/2 PASS.

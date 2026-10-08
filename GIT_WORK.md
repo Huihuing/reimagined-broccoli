@@ -196,3 +196,46 @@ PASS: actual checklist.md conflict resolved and pushed to same PR #6
 ```
 
 **PC 상태에 대한 구분:** 이 실습은 GitHub Actions의 실제 임시 작업 폴더에서 수행했다. Windows PC 자체의 pull 기록이라고 주장하지 않는다.
+
+## 9. 심화 1 최종 병합 및 양쪽 pull 재검증 (2026-10-08)
+
+- 민수 PR: [#5](https://github.com/Huihuing/reimagined-broccoli/pull/5), **Merged**, merge commit `a511e1f6dae28bd82f0e3ae7788cba279357a0be`
+- 지윤 PR: [#6](https://github.com/Huihuing/reimagined-broccoli/pull/6), 같은 줄 충돌 해결 커밋 `f4891e0`을 **기존 PR에 추가한 다음** **Merged**, merge commit `384a133479e449472033e9d18f0b4df6ec7cf4c5`
+- 충돌 실행 로그: [Resolve same-line checklist conflict #37736727608](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37736727608), `CONFLICT (content): Merge conflict in checklist.md`와 해결 2-parent 커밋 확인
+- 양쪽 pull 실행 로그: [Verify post-conflict pulls in both clones #37736836073](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37736836073), GitHub Actions 러너의 **서로 다른 두 임시 clone 폴더**에서 `git switch main` → `git pull --ff-only origin main`을 실제 실행, 결과 두 폴더 **PASS**
+
+```text
+=== minsu latest main pull after PR #6 ===
+Updating a511e1f..384a133
+Fast-forward
+# 민수·지윤 Git 협업 점검표 — 민수 검토 + 지윤 정리 통합안
+PASS minsu: origin main pull includes final conflict resolution
+=== jiyun latest main pull after PR #6 ===
+Updating a511e1f..384a133
+Fast-forward
+# 민수·지윤 Git 협업 점검표 — 민수 검토 + 지윤 정리 통합안
+PASS jiyun: origin main pull includes final conflict resolution
+```
+
+CI 임시 두 clone에서 실행한 실제 로그이며 사용자 Windows PC에서 직접 조작했다고 기재하지 않습니다.
+
+## 10. 선택 심화 3·4: Next.js ↔ Flask ↔ PostgreSQL 영구 메모 CRUD
+
+- 구현 PR: [#7 — Next.js Flask/PostgreSQL API 통합](https://github.com/Huihuing/reimagined-broccoli/pull/7), **Merged**, merge commit `3be0b34181f8bcf1365553da35dbabaf5cd062cb`
+- 작업 브랜치: `feature/next-flask-crud`, base `main`
+- 실제 추가 코드: [monitor/next-frontend/](monitor/next-frontend/) `app/page.js`, `app/layout.js`, `components/DatabaseNotes.jsx`, `lib/api.js`, `next.config.mjs`, `package.json`, `package-lock.json`, `playwright.config.cjs`, `tests/db-notes.spec.cjs`, `README.md`, `.env.example`
+- 기존 DB 준비 SQL: [monitor/backend/sql/001_monitor.sql](monitor/backend/sql/001_monitor.sql), `observation_notes` 테이블, 기존 Flask 경로 [monitor/backend/routes/notes.py](monitor/backend/routes/notes.py)
+- 데이터 경로: Next 화면 `/api/*` fetch → `next.config.mjs` rewrite → 기존 Flask `localhost:5200/api/*` → psycopg 매개변수 쿼리 → PostgreSQL
+- 인증 경로: 기존 `/api/auth/login`, `/api/auth/session`, `/api/auth/logout` 사용, 로그인 없는 메모 API는 **401**
+- GET `/api/notes`, GET `/api/notes/:id`, POST `/api/notes` (201), PUT `/api/notes/:id` (200), DELETE `/api/notes/:id` (200) 실질 데이터 조회·등록·수정·삭제
+- 취소: 수정 취소에 PUT 없음, 삭제 취소에 DELETE 없음. 변경 없이 DB 보존 확인
+- 빈 제목/내용: 폼 오류 + 직접 Flask PUT 빈 본문 400, 기존 본문 보존 확인
+- 없는 메모: GET/PUT/DELETE 404, UI에서 실패 메시지로 표시하고 성공 메시지를 표시하지 않음
+- DB 지속성: 등록 후 브라우저 리로드, 수정 후 리로드, 삭제 후 리로드 각각 PostgreSQL 값 검증
+- 성공 후 목록과 상세를 다시 조회하여 화면과 DB 일치를 확인
+- 자동 검증 원본: [Next Flask PostgreSQL CRUD #37737427371](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37737427371) — PostgreSQL16 실행, 원본 SQL 적용, Flask 로그인 계정·API 실제 실행, `npm ci`, `npm run build`, Next 프로덕션 서버와 Chromium E2E **2 passed (5.0s)**, lockfile 자동 생성·커밋
+- 별도 재검증: [#37737433543](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37737433543) — **2 passed (4.8s)**
+- 실행 순서와 실제 설정 위치: [monitor/next-frontend/README.md](monitor/next-frontend/README.md)
+- 환경 예시: `monitor/backend/.env.example`, `monitor/next-frontend/.env.example`. 실제 `.env`, DB 암호, 세션 비밀키는 Git에서 제외.
+
+**과제 간 차이:** 필수 `next-practice/` 메모는 state 기반으로 새로고침에 초기화되는 게 정상이고, 이 심화 `monitor/next-frontend/` 메모는 PostgreSQL 저장으로 새로고침 후에도 남습니다.
