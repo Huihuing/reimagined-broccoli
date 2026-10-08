@@ -103,3 +103,54 @@ GitHub의 원격 `main`만 갱신되고 각 폴더의 로컬 `main`은 자동으
 필수 메모 앱 소스: [next-practice/](https://github.com/Huihuing/reimagined-broccoli/tree/main/next-practice)  
 구현: `app/layout.js`, `app/page.js`, `app/notes/page.js`, `components/Counter.js`, `components/Notes.js`, `app/globals.css`.  
 앱 생성·빌드·실행 확인은 [next-practice/README.md](next-practice/README.md) 및 GitHub Actions `Verify Next.js notes` 결과 참조. UI 클릭 동작의 PC 확인은 별도 기록이 필요합니다.
+
+## 6. GitHub Actions에서 **실제로 실행된 두 폴더 Git 로그**
+
+[Reproduce two-clone Git practice — 성공 실행 #37734786124](https://github.com/Huihuing/reimagined-broccoli/actions/runs/37734786124)
+
+GitHub Actions Ubuntu 러너 **한 대**에서 동일 저장소를 `git-practice-minsu`와 `git-practice-jiyun`로 실제 clone하고, 원격 PR 작업 당시의 공통 부모 `81f30c7`로 **임시 main을 되돌려** 과거 Git merge/pull을 재현했습니다. 이 되돌림은 CI 임시 폴더 안에서만 실행했으며 GitHub 원격 `main`이나 사용자 PC 파일은 수정하지 않았습니다.
+
+실제 CI 로그에서 발췌 (명령과 결과):
+
+```text
+$ git clone <same origin> git-practice-minsu
+Cloning into 'git-practice-minsu'...
+$ git clone <same origin> git-practice-jiyun
+Cloning into 'git-practice-jiyun'...
+
+========== minsu clone ==========
+origin https://github.com/Huihuing/reimagined-broccoli.git (fetch)
+origin https://github.com/Huihuing/reimagined-broccoli.git (push)
+$ git switch -c feature/minsu origin/feature/minsu
+Switched to a new branch 'feature/minsu'
+$ git switch main
+Your branch is behind 'origin/main' by 7 commits, and can be fast-forwarded.
+$ git merge feature/minsu (main receives changes)
+Updating 81f30c7..1b3b4a1
+Fast-forward
+$ git pull --ff-only origin main
+Updating 1b3b4a1..f4273d9
+Fast-forward
+$ git branch -d feature/minsu
+Deleted branch feature/minsu (was 1b3b4a1).
+minsu PASS: two role files + checklist exist after pull
+
+========== jiyun clone ==========
+origin https://github.com/Huihuing/reimagined-broccoli.git (fetch)
+origin https://github.com/Huihuing/reimagined-broccoli.git (push)
+$ git switch -c feature/jiyun origin/feature/jiyun
+Switched to a new branch 'feature/jiyun'
+$ git switch main
+Your branch is behind 'origin/main' by 7 commits, and can be fast-forwarded.
+$ git merge feature/jiyun (main receives changes)
+Updating 81f30c7..64baa4a
+Fast-forward
+$ git pull --ff-only origin main
+Updating 64baa4a..f4273d9
+Fast-forward
+$ git branch -d feature/jiyun
+Deleted branch feature/jiyun (was 64baa4a).
+jiyun PASS: two role files + checklist exist after pull
+```
+
+**증빙의 범위:** 위 clone/merge/pull은 원본 GitHub Actions 로그에 실제 존재합니다. 사용자 개인 Windows PC에서 수행한 명령 출력은 여전히 별도로 필요합니다. 이 문서의 'PC 작업 미수집' 표시는 **사용자 PC만** 가리킵니다.
