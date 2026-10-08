@@ -40,12 +40,12 @@ test("중복 내용은 서로 다른 ID이고 수정·취소·공백 검증을 �
   await matches.first().getByRole("button", { name: "수정" }).click();
   await input.fill("  ");
   await page.getByRole("button", { name: /수정 내용 저장/ }).click();
-  await expect(page.getByRole("alert")).toContainText("공백만");
+  await expect(page.locator("#note-error")).toContainText("공백만");
   await expect(matches).toHaveCount(1);
   await page.getByRole("button", { name: "수정 취소" }).click();
   await input.fill("   ");
   await add.click();
-  await expect(page.getByRole("alert")).toContainText("공백만");
+  await expect(page.locator("#note-error")).toContainText("공백만");
   await expect(page.locator(".note-item")).toHaveCount(4);
 });
 
