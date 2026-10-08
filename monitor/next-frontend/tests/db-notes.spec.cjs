@@ -54,7 +54,7 @@ test("Flask + PostgreSQL 로그인/목록/상세/등록/수정/삭제와 새로�
   let sentDeletes = 0;
   page.on("request", r => { if (r.method() === "DELETE" && r.url().includes("/api/notes/")) sentDeletes++; });
   await page.getByRole("button", { name: "삭제", exact: true }).click();
-  await page.getByRole("button", { name: "삭제 취소" }).click();
+  await page.getByRole("button", { name: "삭제 취소", exact: true }).click();
   expect(sentDeletes).toBe(0);
   expect((await page.request.get(`/api/notes/${id}`)).status()).toBe(200);
   await page.getByRole("button", { name: "삭제", exact: true }).click();
