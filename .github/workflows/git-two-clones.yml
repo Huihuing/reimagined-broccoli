@@ -1,0 +1,56 @@
+name: Reproduce two-clone Git practice
+on:
+  push:
+    branches: [feature/next-notes-app]
+    paths:
+      - '.github/workflows/git-two-clones.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  two-clones:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Clone twice, switch roles, merge locally, pull and clean branches
+        shell: bash
+        run: |
+          set -euo pipefail
+          URL="https://github.com/${GITHUB_REPOSITORY}.git"
+          BASE="81f30c7a55c85e300d8bfaebfd214a37f163d660"
+          mkdir -p "$RUNNER_TEMP/git-practice"
+          cd "$RUNNER_TEMP/git-practice"
+          echo '$ git clone <same origin> git-practice-minsu'
+          git clone "$URL" git-practice-minsu
+          echo '$ git clone <same origin> git-practice-jiyun'
+          git clone "$URL" git-practice-jiyun
+          for ROLE in minsu jiyun; do
+            cd "$RUNNER_TEMP/git-practice/git-practice-$ROLE"
+            echo "========== $ROLE clone =========="
+            echo '$ git remote -v'
+            git remote -v
+            echo '$ git switch main'
+            git switch main
+            echo '$ git reset --hard <historical initial base> (isolated CI clone only)'
+            git reset --hard "$BASE"
+            echo "$ git switch -c feature/$ROLE origin/feature/$ROLE"
+            git switch -c "feature/$ROLE" "origin/feature/$ROLE"
+            echo "$ git diff main..feature/$ROLE --name-only"
+            git diff --name-only "main..feature/$ROLE"
+            echo '$ git switch main'
+            git switch main
+            echo "$ git merge feature/$ROLE (main receives changes)"
+            git merge "feature/$ROLE"
+            echo '$ git pull --ff-only origin main'
+            git pull --ff-only origin main
+            echo '$ git ls-files minsu.md jiyun.md checklist.md'
+            git ls-files minsu.md jiyun.md checklist.md
+            for ITEM in minsu.md jiyun.md checklist.md; do test -f "$ITEM"; done
+            echo "$ git branch -d feature/$ROLE"
+            git branch -d "feature/$ROLE"
+            echo '$ git status --short'
+            git status --short
+            echo "$ROLE PASS: two role files + checklist exist after pull"
+          done
