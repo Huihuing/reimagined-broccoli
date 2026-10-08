@@ -95,7 +95,7 @@ test("Flask 400/404 거절을 실패로 보여 주며 원본 메모를 보존", 
   await page.getByRole("button", { name: "삭제 확정" }).click();
   await expect(page.locator(".dialog .error")).toContainText("HTTP 404");
   await expect(page.getByText("삭제 후 DB 목록을 다시 조회했습니다.")).toHaveCount(0);
-  await page.getByRole("button", { name: "삭제 취소" }).click();
+  await page.locator(".dialog").getByRole("button", { name: "삭제 취소", exact: true }).click();
   await page.getByRole("button", { name: "목록 새로고침" }).click();
 
   const missing = await page.request.get("/api/notes/999999999");
