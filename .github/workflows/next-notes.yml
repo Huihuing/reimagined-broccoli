@@ -23,15 +23,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: npm
-          cache-dependency-path: next-practice/package-lock.json
-        continue-on-error: true
-      - name: Generate lockfile if missing
+      - name: Generate synchronized lockfile
         working-directory: next-practice
-        run: |
-          if [ ! -f package-lock.json ]; then
-            npm install --package-lock-only --no-audit --no-fund
-          fi
+        run: npm install --package-lock-only --no-audit --no-fund
       - name: Install exact npm dependencies
         working-directory: next-practice
         run: npm ci --no-audit --no-fund
@@ -54,14 +48,21 @@ jobs:
           grep -q '나의 메모' /tmp/notes.html
           grep -q '오늘 배운 Next.js' /tmp/notes.html
           echo 'PASS: production GET / and GET /notes'
-      - name: Commit generated npm lockfile to app branch
+      - name: Install Chromium for UI tests
+        working-directory: next-practice
+        run: npx playwright install --with-deps chromium
+      - name: Test browser interactions
+        working-directory: next-practice
+        run: npm run test:e2e
+      - name: Commit synchronized npm lockfile to app branch
         if: github.event_name == 'push' && github.ref == 'refs/heads/feature/next-notes-app'
         run: |
-          if ! git ls-files --error-unmatch next-practice/package-lock.json >/dev/null 2>&1; then
+          if [ -n "$(git status --porcelain -- next-practice/package-lock.json)" ]; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add next-practice/package-lock.json
-            git commit -m 'chore(next): commit npm dependency lockfile'
+            git commit -m 'chore(next): synchronize npm dependency lockfile'
+            git pull --rebase origin feature/next-notes-app
             git push origin HEAD:feature/next-notes-app
           else
             echo 'package-lock.json already tracked'
