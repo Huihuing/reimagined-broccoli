@@ -1,0 +1,101 @@
+name: Verify Next Flask PostgreSQL CRUD
+on:
+  push:
+    branches: [main, feature/next-flask-crud]
+    paths: [monitor/next-frontend/**, .github/workflows/next-flask-db.yml]
+  pull_request:
+    paths: [monitor/next-frontend/**, .github/workflows/next-flask-db.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  postgres-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mini_watch
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mini_watch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_NAME: mini_watch
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SESSION_SECRET: ci-only-random-demo-secret
+      FLASK_API_URL: http://127.0.0.1:5200
+      CI: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Flask and PostgreSQL Python dependencies
+        run: pip install -r monitor/backend/requirements.txt
+      - name: Prepare existing PostgreSQL schema
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, "monitor/backend")
+          from db import connect_db
+          sql = Path("monitor/backend/sql/001_monitor.sql").read_text(encoding="utf-8")
+          with connect_db() as conn:
+              for command in sql.split(";"):
+                  if command.strip():
+                      conn.execute(command)
+              conn.commit()
+          print("PASS: existing monitor PostgreSQL schema created")
+          PY
+      - name: Prepare test operator and start existing Flask API
+        shell: bash
+        run: |
+          cd monitor/backend
+          python create_user.py --username admin --name "운영자" --password test-password
+          python app.py > "$RUNNER_TEMP/flask-api.log" 2>&1 &
+          cd ../..
+          for n in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:5200/health; then break; fi
+            sleep 1
+          done
+          curl -fsS http://127.0.0.1:5200/health
+      - name: Generate reproducible lockfile
+        working-directory: monitor/next-frontend
+        run: npm install --package-lock-only --no-audit --no-fund
+      - name: npm ci with Flask Next frontend
+        working-directory: monitor/next-frontend
+        run: npm ci --no-audit --no-fund
+      - name: Production build
+        working-directory: monitor/next-frontend
+        run: npm run build
+      - name: Install real Chromium
+        working-directory: monitor/next-frontend
+        run: npx playwright install --with-deps chromium
+      - name: Browser test real Flask/Postgres API via Next same-origin proxy
+        working-directory: monitor/next-frontend
+        run: npm run test:e2e
+      - name: Commit generated lockfile on feature branch only
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feature/next-flask-crud'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [ -n "$(git status --porcelain -- monitor/next-frontend/package-lock.json)" ]; then
+            git add monitor/next-frontend/package-lock.json
+            git commit -m 'chore(next): lock tested Flask frontend npm dependencies'
+            git pull --rebase origin feature/next-flask-crud
+            git push origin HEAD:feature/next-flask-crud
+          fi
