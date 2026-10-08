@@ -1,0 +1,60 @@
+name: Resolve same-line checklist conflict
+on:
+  push:
+    branches: [feature/conflict-jiyun]
+    paths:
+      - '.github/workflows/resolve-same-line.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actual-conflict:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/conflict-jiyun
+          fetch-depth: 0
+      - name: Reproduce and resolve real git merge conflict on same PR branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          echo '=== Before merge: competing first lines ==='
+          git show HEAD:checklist.md | head -1
+          git show origin/main:checklist.md | head -1
+          set +e
+          git merge --no-ff origin/main -m "merge: bring latest main into jiyun conflict branch" >/tmp/merge-output.txt 2>&1
+          merge_exit=$?
+          set -e
+          cat /tmp/merge-output.txt
+          echo "MERGE_EXIT=$merge_exit"
+          test "$merge_exit" -ne 0
+          git ls-files -u checklist.md | tee /tmp/unmerged-index.txt
+          test -s /tmp/unmerged-index.txt
+          echo '=== Raw conflict marker excerpt ==='
+          sed -n '1,12p' checklist.md
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("checklist.md")
+          text = path.read_text(encoding="utf-8")
+          assert text.startswith("<<<<<<< HEAD\n"), text[:140]
+          assert "\n=======\n" in text
+          end = text.index("\n>>>>>>> ", text.index("\n=======\n"))
+          next_line = text.index("\n", end + 1)
+          title = "# 민수·지윤 Git 협업 점검표 — 민수 검토 + 지윤 정리 통합안"
+          path.write_text(title + text[next_line:], encoding="utf-8")
+          PY
+          echo '=== Resolved title / no markers ==='
+          head -3 checklist.md
+          if grep -Eq '^(<<<<<<<|=======|>>>>>>>)' checklist.md; then exit 1; fi
+          git add checklist.md
+          git commit -m "fix(git): resolve same-line conflict on existing jiyun PR"
+          echo '=== Merge parent evidence ==='
+          git log -1 --pretty='commit=%H parents=%P'
+          git push origin HEAD:feature/conflict-jiyun
+          echo 'PASS: actual checklist.md conflict resolved and pushed to same PR #6'

@@ -1,0 +1,31 @@
+name: Verify post-conflict pulls in both clones
+on:
+  push:
+    branches: [main]
+    paths: [checklist.md, .github/workflows/check-conflict-pulls.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  pull-both:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone twice and pull final resolved conflict on both local mains
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          git clone "https://github.com/${GITHUB_REPOSITORY}.git" git-practice-minsu
+          git clone "https://github.com/${GITHUB_REPOSITORY}.git" git-practice-jiyun
+          for role in minsu jiyun; do
+            cd "$RUNNER_TEMP/git-practice-$role"
+            git switch main
+            git reset --hard a511e1f6dae28bd82f0e3ae7788cba279357a0be
+            echo "=== $role latest main pull after PR #6 ==="
+            git pull --ff-only origin main
+            head -1 checklist.md
+            grep -Fq '민수 검토 + 지윤 정리 통합안' checklist.md
+            test -f minsu.md
+            test -f jiyun.md
+            echo "PASS $role: origin main pull includes final conflict resolution"
+          done
