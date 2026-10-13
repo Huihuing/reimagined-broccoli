@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS request_events (
     path TEXT NOT NULL,
     status INTEGER NOT NULL,
     duration_ms DOUBLE PRECISION,
-    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    occurred_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    event_type VARCHAR(32) NOT NULL DEFAULT 'http_request'
 );
+
+ALTER TABLE request_events
+    ADD COLUMN IF NOT EXISTS event_type VARCHAR(32) NOT NULL DEFAULT 'http_request';
 
 CREATE INDEX IF NOT EXISTS idx_request_events_path
     ON request_events (path);
