@@ -27,6 +27,3 @@ CREATE TABLE IF NOT EXISTS observation_notes (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     CONSTRAINT observation_notes_status_check CHECK (status IN ('확인 전', '확인 중', '완료'))
 );
--- Existing custom project equivalents: users -> monitor_users;
--- http_events -> request_events; notes -> observation_notes.
--- Keep the original table names so all existing CRUD and migrations remain compatible.
