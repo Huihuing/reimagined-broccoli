@@ -20,3 +20,9 @@ dist/
 out/
 *.tsbuildinfo
 npm-debug.log*
+
+# All environment variants except examples
+**/.env.*
+!**/.env.example
+*.log
+pgdata/
