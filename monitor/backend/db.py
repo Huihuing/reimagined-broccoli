@@ -7,7 +7,7 @@ from psycopg.rows import dict_row
 
 
 ENV_PATH = Path(__file__).with_name(".env")
-load_dotenv(ENV_PATH)
+load_dotenv(ENV_PATH, interpolate=False)
 
 
 def connect_db() -> psycopg.Connection:
@@ -17,5 +17,7 @@ def connect_db() -> psycopg.Connection:
         dbname=os.environ["DB_NAME"],
         user=os.environ["DB_USER"],
         password=os.environ["DB_PASSWORD"],
+        sslmode=os.getenv("DB_SSLMODE", "prefer"),
+        connect_timeout=10,
         row_factory=dict_row,
     )
