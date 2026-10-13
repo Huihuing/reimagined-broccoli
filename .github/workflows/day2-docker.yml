@@ -1,0 +1,38 @@
+name: Verify Day2 Docker images and Compose config
+on:
+  pull_request:
+    paths:
+      - 'general/**'
+      - 'monitor/backend/**'
+      - 'monitor/next-frontend/**'
+      - 'compose-*.yaml'
+      - 'gateways/**'
+      - '.github/workflows/day2-docker.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'general/**'
+      - 'monitor/backend/**'
+      - 'monitor/next-frontend/**'
+      - 'compose-*.yaml'
+      - 'gateways/**'
+      - '.github/workflows/day2-docker.yml'
+permissions:
+  contents: read
+jobs:
+  docker-builds:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate local Compose projects
+        run: |
+          docker network create rb-events
+          docker compose -f compose-general.yaml config --quiet
+          docker compose -f compose-monitor.yaml config --quiet
+      - name: Build Render general Flask image
+        run: docker build -t rb-day2-general:test ./general
+      - name: Build Render monitor Flask image
+        run: docker build -t rb-day2-monitor:test ./monitor/backend
+      - name: Build Render Next.js image
+        run: docker build -t rb-day2-next:test ./monitor/next-frontend

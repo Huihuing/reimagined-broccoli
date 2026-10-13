@@ -1,0 +1,57 @@
+name: rb-monitor
+services:
+  monitor-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: monitor_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: local-only-postgres
+    volumes:
+      - monitor-data:/var/lib/postgresql/data
+      - ./monitor/backend/sql/deploy.sql:/docker-entrypoint-initdb.d/01-deploy.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d monitor_db"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    networks: [monitor-data-net]
+  monitor-api:
+    build: ./monitor/backend
+    environment:
+      DB_HOST: monitor-db
+      DB_PORT: "5432"
+      DB_NAME: monitor_db
+      DB_USER: postgres
+      DB_PASSWORD: local-only-postgres
+      DB_SSLMODE: prefer
+      SECRET_KEY: local-only-monitor-session-key-not-for-cloud
+      SESSION_COOKIE_SECURE: "false"
+      EVENT_TOKEN: local-only-shared-event-token-not-for-cloud
+      ENABLE_SENTRY_TEST: "false"
+    depends_on:
+      monitor-db:
+        condition: service_healthy
+    networks: [monitor-data-net, monitor-api-net, events-net]
+  monitor-web:
+    build: ./monitor/next-frontend
+    environment:
+      MONITOR_API_URL: http://monitor-api:5000
+      PORT: "3001"
+    depends_on: [monitor-api]
+    networks: [monitor-api-net, monitor-front-net]
+  monitor-gateway:
+    image: nginx:alpine
+    volumes:
+      - ./gateways/monitor.conf:/etc/nginx/conf.d/default.conf:ro
+    ports: ["127.0.0.1:8082:80"]
+    depends_on: [monitor-web]
+    networks: [monitor-front-net]
+volumes:
+  monitor-data:
+networks:
+  monitor-data-net: {}
+  monitor-api-net: {}
+  monitor-front-net: {}
+  events-net:
+    external: true
+    name: rb-events

@@ -1,4 +1,7 @@
+import os
 from werkzeug.security import generate_password_hash
+
+os.environ.setdefault("EVENT_TOKEN", "ci-local-only-event-token")
 
 from app import create_app
 from db import connect_db
@@ -67,6 +70,7 @@ def test_events_are_persisted_filtered_and_summarized() -> None:
 
     assert client.post(
         "/api/events",
+        headers={"X-Event-Token": os.environ["EVENT_TOKEN"]},
         json={
             "service": "general",
             "method": "GET",
@@ -78,6 +82,7 @@ def test_events_are_persisted_filtered_and_summarized() -> None:
 
     assert client.post(
         "/api/events",
+        headers={"X-Event-Token": os.environ["EVENT_TOKEN"]},
         json={
             "service": "general",
             "method": "GET",

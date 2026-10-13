@@ -1,4 +1,29 @@
-# Mini Watch — React + Flask 감시 대시보드
+# Mini Watch — Day2 클라우드 배포 통합
+
+> **Day2 과제의 주요 결과 문서: [deployment-plan.md](deployment-plan.md)**  
+> 원본 저장소: https://github.com/Huihuing/reimagined-broccoli  
+> 작업 브랜치: `day2-deploy` · 실제 Render/Supabase/Sentry 배포는 미완료, 코드와 설정을 제출한다.
+
+기존 `general/` 게시판, `monitor/backend/` 감시 API, `monitor/frontend/` React 화면, `monitor/next-frontend/` Next.js Flask/PostgreSQL 메모와 `next-practice/` 학습 앱을 유지했다. Day2의 **실제 배포 대상은 일반 Flask, 감시 Flask, 감시 Next.js 세 앱**이다.
+
+이번 변경: Render의 Flask Waitress / `PORT` / `/health`, Next의 앱별 Dockerfile 및 잠금 파일 기반 빌드, 서로 다른 Supabase 프로젝트를 위한 `DB_*`/SSL 및 `deploy.sql`, 안전한 `SECRET_KEY`/HTTPS 쿠키, 일반 로그인 실패·성공의 401/200 이벤트 분류 및 `EVENT_TOKEN` 인증, Next 서버 `MONITOR_API_URL` 런타임 프록시(쿠키/CSRF/상태 전달), Sentry SDK와 오류 재현 경로의 안전한 JSON 수정, 로컬 Docker Compose 두 개와 Nginx 게이트웨이다. 원래 로그인·게시글·메모 API와 기존 GitHub Actions도 유지했다.
+
+- 일반 Flask: `general/` — `/health`, `/login`, `/api/auth/login`, 기존 게시판 CRUD, `general/sql/deploy.sql`
+- 감시 Flask: `monitor/backend/` — `/health`, 인증, `/api/events`, `/api/notes`, `monitor/backend/sql/deploy.sql`
+- 감시 Next.js: `monitor/next-frontend/` — 브라우저 `/api/*` → 서버 Route Handler → 감시 Flask; 기록과 메모 화면
+- 이전 React/Vite: `monitor/frontend/` — 이전 수업 결과를 그대로 유지한 별도 앱
+
+**로컬 Compose:**
+```bash
+docker network create rb-events
+docker compose -f compose-monitor.yaml up -d --build
+docker compose -f compose-general.yaml up -d --build
+```
+일반: http://127.0.0.1:8081 / 감시: http://127.0.0.1:8082. 로컬 학습용 비밀번호/토큰을 클라우드에 재사용하면 안 된다. 실제 배포 설정과 비밀값 없는 `.env.example` 위치, 계정 생성법, 테스트 및 오류 진단은 반드시 **[deployment-plan.md](deployment-plan.md)**를 참조한다.
+
+---
+
+## 기존 React + Flask 프로젝트 기록
 
 기존 `mini-watch`의 일반 게시판을 유지하면서, 운영자가 로그인해 요청 기록을 확인하고 관찰 메모를 관리하는 감시 대시보드를 완성한 프로젝트입니다.
 
