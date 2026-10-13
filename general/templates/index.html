@@ -13,7 +13,7 @@
         <p class="eyebrow">MINI WATCH BOARD</p>
         <h1>게시글 목록</h1>
       </div>
-      <a class="button primary" href="{{ url_for('posts.new_post') }}">새 글 작성</a>
+      <div><a href="/login">일반 로그인</a> <a class="button primary" href="{{ url_for('posts.new_post') }}">새 글 작성</a></div>
     </header>
 
     {% if posts %}
