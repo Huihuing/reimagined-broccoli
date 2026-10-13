@@ -1,4 +1,4 @@
--- Run ONLY in the separate MONITOR Supabase project; preserve existing data.
+-- Run ONLY in the separate MONITOR Supabase project. Preserve existing data.
 CREATE TABLE IF NOT EXISTS monitor_users (
     id BIGSERIAL PRIMARY KEY,
     username VARCHAR(80) NOT NULL UNIQUE,
