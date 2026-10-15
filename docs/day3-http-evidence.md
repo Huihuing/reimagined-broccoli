@@ -102,4 +102,15 @@ docker compose -f compose-monitor.yaml exec monitor-db psql -U postgres -d monit
 | 실제 GET / 10회 + 없는 경로1회 | 10 >= 10, 검토 후보 | 11행 | 선택 심화 경계 |
 | 새 시작 뒤 추가 일반 요청 없음 | 조회0, 기준 미해당 | 0행 | 새로운 ID 경계 |
 
-GitHub CI `.github/workflows/day3-http-evidence.yml`은 **실제** Flask HTTP 요청→PostgreSQL 행→분석 API를 실행하도록 작성했다. `tests/test_day3.py`의 합성 원본은 *순수 함수 단위 테스트 전용*이며 학생의 실제 요청 로그 근거로 쓰지 않는다. CI 최종 통과 여부는 Actions 실행 결과로 검증해야 한다.
+GitHub CI `.github/workflows/day3-http-evidence.yml`은 **실제** Flask HTTP 요청→PostgreSQL 행→분석 API를 실행하도록 작성했다. `tests/test_day3.py`의 합성 원본은 *순수 함수 단위 테스트 전용*이며 학생의 실제 요청 로그 근거로 쓰지 않는다. 
+### 실제 검증 결과 (2026-10-15, GitHub Actions Ubuntu runner)
+
+| 검증 | 실행 기록 | 결과 |
+| --- | --- | --- |
+| 실제 일반 Flask 요청 12회 + 404 한 건, PostgreSQL 저장 후 HTTP 분석, 10/20 동일 근거, 새 시작0, 10회 경계=11행 | [Day3 실측 통합 CI #38682531331](https://github.com/Huihuing/reimagined-broccoli/actions/runs/38682531331) | **성공**, 순수 규칙 단위 테스트 4건 통과, 실제 12/13 및 10/11 시나리오 통과 |
+| 기존 게시글 CRUD·감시 DB·로그인 API·이전 React 빌드 | [기존 서비스 회귀 CI #38682531308](https://github.com/Huihuing/reimagined-broccoli/actions/runs/38682531308) | **성공** |
+| 두 Compose YAML, 일반 Flask/감시 Flask/감시 Next Docker 이미지 실제 빌드 | [Docker 검사 #38682531314](https://github.com/Huihuing/reimagined-broccoli/actions/runs/38682531314) | **성공** |
+| 기존 Next.js 화면의 로그인·메모 CRUD·새로고침 Chromium 브라우저 테스트 | [Next/Flask/PostgreSQL UI 회귀 CI #38682531316](https://github.com/Huihuing/reimagined-broccoli/actions/runs/38682531316) | **성공** |
+
+위는 **CI에서 실행한 결과**이지 사용자 Windows PC에서 Docker Compose를 직접 켜고 캡처한 결과는 아니다. 또한 마지막 Chromium 테스트는 기존 메모 UI의 회귀 검사이며 새 Day3 분석 카드의 직접 브라우저 클릭 시나리오까지 검증했다는 뜻이 아니다. 새 Day3 화면은 코드와 Next production build로 확인했으며, 실제 사용자의 브라우저에서 버튼·기준 10/20을 누르는 수동 확인 절차는 4장에 남겼다. 외부 Render/Supabase/Sentry 실제 접속·수신 증빙은 수행하지 않았다.
+
