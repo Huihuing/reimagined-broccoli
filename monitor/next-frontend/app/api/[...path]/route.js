@@ -3,8 +3,8 @@ export const runtime = "nodejs";
 async function forward(request, context) {
   const { path } = await context.params;
   const resource = path.join("/");
-  const allowed = /^(auth\/(login|logout|session)|notes(\/\d+)?|events|sentry-test)$/.test(resource);
-  if (!allowed || (resource === "events" && request.method !== "GET")) {
+  const allowed = /^(auth\/(login|logout|session)|notes(\/\d+)?|events|analysis(\/(start|raw))?|sentry-test)$/.test(resource);
+  if (!allowed || ((resource === "events" || resource.startsWith("analysis")) && request.method !== "GET")) {
     return Response.json({ error: "지원하지 않는 요청입니다." }, { status: 404 });
   }
   const base = process.env.MONITOR_API_URL || process.env.FLASK_API_URL || "http://127.0.0.1:5200";

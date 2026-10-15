@@ -27,7 +27,10 @@ services:
       SECRET_KEY: local-only-monitor-session-key-not-for-cloud
       SESSION_COOKIE_SECURE: "false"
       EVENT_TOKEN: local-only-shared-event-token-not-for-cloud
+      GENERAL_URL: http://general-api:5000
       ENABLE_SENTRY_TEST: "false"
+    volumes:
+      - ./monitor/backend/learning:/app/learning:ro
     depends_on:
       monitor-db:
         condition: service_healthy
