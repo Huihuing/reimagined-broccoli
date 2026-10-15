@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiRequest } from "../lib/api";
 import EventList from "./EventList";
+import AnalysisClient from "./AnalysisClient";
 
 const emptyForm = { title: "", body: "", status: "확인 전" };
 const statuses = ["확인 전", "확인 중", "완료"];
@@ -260,6 +261,7 @@ export default function DatabaseNotes() {
         </>
       )}
       {user && <EventList />}
+      {user && <AnalysisClient />}
       <footer className="footer">Flask session · PostgreSQL observation_notes · 브라우저와 DB는 API로만 통신</footer>
     </main>
   );

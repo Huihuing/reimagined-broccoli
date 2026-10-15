@@ -1,0 +1,1 @@
+# This directory is mounted read-only in the API container; generated observation JSON stays on the host.

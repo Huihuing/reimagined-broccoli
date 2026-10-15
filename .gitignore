@@ -26,3 +26,7 @@ npm-debug.log*
 !**/.env.example
 *.log
 pgdata/
+
+# Actual Day3 captured HTTP observation, generated locally (not a fixture)
+monitor/backend/learning/data/observation.json
+monitor/backend/learning/data/observation-next.json

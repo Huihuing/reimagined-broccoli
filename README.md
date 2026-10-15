@@ -1,3 +1,14 @@
+# 5과목 Day3 — 실제 HTTP 요청 로그 분석과 근거 카드
+
+> **이번 과제 실행·설명·예상값·검증 상태: [docs/day3-http-evidence.md](docs/day3-http-evidence.md)**  
+> 기존 일반 Flask 게시판, 감시 Flask/Next UI, Day2 Render/Supabase/Sentry, 2개 Compose와 DB를 보존하면서 실제 요청 수집·정규화·시간창 분석을 추가했다. **제출용 데이터는 실제 실행으로 DB에 기록된 요청에서 얻는다.** 별도 PCAP/IOC 교육용 데이터는 실제 HTTP 근거와 섞지 않는다.
+
+핵심 경로: `general/app.py → general/request_logging.py::record_request → monitor/backend/routes/events.py → event_rules.make_event → repositories/events.py::create_event → learning/normalize.py → learning/http_rules.py → learning/report.py → routes/analysis.py → monitor/next-frontend/components/AnalysisClient.js`.
+
+**한눈에 보는 예상 결과**: 실제 목록 조회 12회와 없는 경로 404 1회 → 기준10 `12 >= 10` 검토 후보 / 근거13행. 첫 분석의 `after_id`·`reference_time`을 유지하며 기준만20으로 바꾸면 관찰값12·근거13행 그대로 기준 미해당. 새로운 관찰은 이전 DB 데이터를 삭제하지 않는다.
+
+---
+
 # Mini Watch — Day2 클라우드 배포 통합
 
 > **Day2 과제의 주요 결과 문서: [deployment-plan.md](deployment-plan.md)**  

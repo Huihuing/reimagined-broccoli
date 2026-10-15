@@ -3,6 +3,7 @@ import os
 from flask import Blueprint, jsonify, request
 from auth_required import login_required
 from repositories.events import create_event, list_events
+from event_rules import make_event
 
 events_bp = Blueprint("events", __name__)
 
@@ -16,19 +17,12 @@ def receive_event():
     if not hmac.compare_digest(received.encode(), token.encode()):
         return jsonify({"error": "기록 전송 권한이 없습니다."}), 401
 
-    payload = request.get_json(silent=True)
-    if not isinstance(payload, dict):
-        return jsonify({"error": "JSON 요청이 필요합니다."}), 400
-    method = str(payload.get("method", "")).strip().upper()
-    path = str(payload.get("path", "")).strip()
-    try:
-        status = int(payload.get("status", payload.get("status_code")))
-    except (TypeError, ValueError):
-        status = 0
-    if not method or not path or not (100 <= status <= 599):
+    # Validation and classification are isolated in event_rules.make_event.
+    event = make_event(request.get_json(silent=True))
+    if event is None:
         return jsonify({"error": "method, path, status 값을 확인해 주세요."}), 400
-    event = create_event({**payload, "method": method, "path": path, "status": status})
-    return jsonify({"event": event}), 201
+    stored = create_event(event)
+    return jsonify({"event": stored}), 201
 
 
 @events_bp.get("/api/events")
@@ -37,7 +31,7 @@ def get_events():
     path_query = request.args.get("path", "").strip()
     raw_status = request.args.get("status", "").strip()
     event_type = request.args.get("event_type", "").strip()
-    if event_type and event_type not in {"login_success", "login_failure", "http_request"}:
+    if event_type and event_type not in {"login_success", "login_failure", "http_request", "post_list", "request_error"}:
         return jsonify({"error": "지원하지 않는 이벤트 유형입니다."}), 400
     status_code = None
     if raw_status:

@@ -1,6 +1,6 @@
 import os
 from flask import Flask, abort, jsonify, session
-from request_logging import register_request_logging
+from request_logging import start_request_timer, record_request
 from routes.posts import posts_bp
 from routes.auth import auth_bp
 from observability import configure_errors
@@ -18,7 +18,8 @@ def create_app() -> Flask:
     )
     app.register_blueprint(posts_bp)
     app.register_blueprint(auth_bp)
-    register_request_logging(app)
+    app.before_request(start_request_timer)
+    app.after_request(record_request)
 
     @app.get("/health")
     def health():
