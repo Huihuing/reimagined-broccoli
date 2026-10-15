@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import Flask, abort, jsonify, session
 from dotenv import load_dotenv
 from routes import auth_bp, events_bp, notes_bp
+from routes.analysis import analysis_bp
 from observability import configure_errors
 
 load_dotenv(Path(__file__).with_name(".env"), interpolate=False)
@@ -21,6 +22,7 @@ def create_app() -> Flask:
     app.register_blueprint(auth_bp)
     app.register_blueprint(events_bp)
     app.register_blueprint(notes_bp)
+    app.register_blueprint(analysis_bp)
 
     @app.get("/health")
     def health():
