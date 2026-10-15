@@ -45,7 +45,7 @@ jobs:
       EVENT_TOKEN: ci-day3-local-demo-event-token
       MONITOR_URL: http://127.0.0.1:5200/api/events
       GENERAL_URL: http://127.0.0.1:5100
-      PYTHONPATH: monitor/backend
+      PYTHONPATH: ${{ github.workspace }}/monitor/backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
