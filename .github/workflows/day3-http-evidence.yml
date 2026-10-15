@@ -1,0 +1,156 @@
+name: Day3 real HTTP evidence integration
+on:
+  pull_request:
+    paths:
+      - 'general/**'
+      - 'monitor/backend/**'
+      - 'monitor/next-frontend/**'
+      - 'compose-*.yaml'
+      - '.github/workflows/day3-http-evidence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'general/**'
+      - 'monitor/backend/**'
+      - 'monitor/next-frontend/**'
+      - 'compose-*.yaml'
+      - '.github/workflows/day3-http-evidence.yml'
+permissions:
+  contents: read
+jobs:
+  live-requests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mini_watch
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mini_watch"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '5432'
+      DB_NAME: mini_watch
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      SECRET_KEY: ci-day3-demo-session-secret
+      SESSION_SECRET: ci-day3-demo-session-secret
+      EVENT_TOKEN: ci-day3-local-demo-event-token
+      MONITOR_URL: http://127.0.0.1:5200/api/events
+      GENERAL_URL: http://127.0.0.1:5100
+      PYTHONPATH: monitor/backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install app dependencies
+        run: |
+          pip install -r general/requirements.txt
+          pip install -r monitor/backend/requirements.txt
+      - name: Build current non-destructive PostgreSQL schemas
+        run: |
+          python - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "general")
+          from db import connect_db
+          with connect_db() as conn:
+              for path in (Path("general/sql/deploy.sql"), Path("monitor/backend/sql/deploy.sql")):
+                  for sql in path.read_text(encoding="utf-8").split(";"):
+                      if sql.strip():
+                          conn.execute(sql)
+              conn.commit()
+          PY
+      - name: Unit test normalization and time boundaries
+        working-directory: monitor/backend
+        run: pytest -q tests/test_day3.py
+      - name: Create existing operator and run both Flask services
+        run: |
+          (cd monitor/backend && python create_user.py --username admin --name operator --password test-password && python app.py > /tmp/day3-monitor.log 2>&1 &)
+          (cd general && python app.py > /tmp/day3-general.log 2>&1 &)
+          python - <<'PY'
+          import time
+          import requests
+          for url in ("http://127.0.0.1:5200/health", "http://127.0.0.1:5100/health"):
+              for i in range(60):
+                  try:
+                      if requests.get(url, timeout=1).status_code == 200:
+                          break
+                  except requests.RequestException:
+                      pass
+                  time.sleep(.25)
+              else:
+                  raise SystemExit("Flask service failed to start: " + url)
+          PY
+      - name: Real 12 list requests, one missing, same DB evidence under 10 and 20
+        run: |
+          python - <<'PY'
+          import requests
+          s = requests.Session()
+          assert s.post("http://127.0.0.1:5200/api/auth/login", json={"username":"admin","password":"test-password"}).status_code == 200
+          r = s.get("http://127.0.0.1:5200/api/analysis/start")
+          assert r.status_code == 200, r.text
+          open("/tmp/day3-after-id", "w").write(str(r.json()["after_id"]))
+          PY
+          cd monitor/backend
+          python -m learning.capture_case 12 > learning/data/observation.json
+          python -m learning.lesson2
+          python -m learning.lesson3
+          python -m learning.lesson4
+          python -m learning.lesson5
+          python - <<'PY'
+          import requests
+          s = requests.Session()
+          assert s.post("http://127.0.0.1:5200/api/auth/login", json={"username":"admin","password":"test-password"}).status_code == 200
+          after = open("/tmp/day3-after-id").read().strip()
+          base = "http://127.0.0.1:5200/api/analysis"
+          r10 = s.get(base, params={"after_id": after, "threshold": 10})
+          assert r10.status_code == 200, r10.text
+          a = r10.json()
+          r20 = s.get(base, params={"after_id": after, "threshold": 20, "reference_time": a["reference_time"]})
+          assert r20.status_code == 200, r20.text
+          b = r20.json()
+          x, y = a["card"], b["card"]
+          assert (x["observed"], x["verdict"], len(x["records"])) == (12, "검토 후보", 13), x
+          assert (y["observed"], y["verdict"], len(y["records"])) == (12, "기준 미해당", 13), y
+          assert len(x["view_ids"]) == 12 and len(x["following_error_ids"]) == 1
+          assert x["evidence"] == y["evidence"] and a["reference_time"] == b["reference_time"]
+          assert all(record["id"] == "http-" + str(record["original_id"]) for record in x["records"])
+          assert [record["kind"] for record in x["records"]].count("post_list") == 12
+          print("PASS actual DB: views 12, following 404 1, evidence 13, threshold 10/20 anchored")
+          fresh = s.get(base.replace("/analysis", "/analysis/start"))
+          assert fresh.status_code == 200
+          empty = s.get(base, params={"after_id": fresh.json()["after_id"], "threshold": 10})
+          assert empty.json()["card"]["observed"] == 0
+          print("PASS new observation uses ID boundary without deleting old rows")
+          PY
+      - name: Real 10-request boundary (>= 10, 11 records)
+        working-directory: monitor/backend
+        run: |
+          python - <<'PY'
+          import requests
+          s=requests.Session()
+          assert s.post("http://127.0.0.1:5200/api/auth/login",json={"username":"admin","password":"test-password"}).status_code == 200
+          after=s.get("http://127.0.0.1:5200/api/analysis/start").json()["after_id"]
+          from learning.capture_case import capture_case
+          data=capture_case(10, "http://127.0.0.1:5100")
+          assert len(data["original_rows"]) == 11, data
+          response=s.get("http://127.0.0.1:5200/api/analysis",params={"after_id":after,"threshold":10})
+          assert response.status_code == 200, response.text
+          card=response.json()["card"]
+          assert (card["observed"],card["matched"],len(card["evidence"])) == (10,True,11),card
+          print("PASS boundary count=10, >=10 review candidate, evidence=11")
+          PY
+      - name: Print app logs on failure
+        if: failure()
+        run: |
+          tail -n 60 /tmp/day3-general.log || true
+          tail -n 60 /tmp/day3-monitor.log || true
